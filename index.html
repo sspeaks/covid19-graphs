@@ -1,0 +1,234 @@
+<html>
+
+<head>
+    <title>COVID19 Graphs</title>
+    <script type="module">
+        import Highcharts from 'https://code.highcharts.com/es-modules/masters/highcharts.src.js';
+        let percentageChart;
+        const onDataLineChart = (data, key) => {
+            data = data[key]
+            Highcharts.chart('container',
+                {
+                    title: {
+                        text: `${key} COVID19 Cases`
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
+                        title: {
+                            text: 'Cases'
+                        }
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: [{
+                        name: 'Confirmed',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
+                        })
+                    }, {
+                        name: 'Recovered',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
+                        })
+                    }, {
+                        name: 'Deaths',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
+                        })
+                    }],
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
+        const onDataPercentageChart = (data, key) => {
+            data = data[key];
+            getPopulation(key).then(pop => {
+                percentageChart = Highcharts.chart('percentage', {
+                    chart: {
+                        type: 'area'
+                    },
+                    title: {
+                        text: `${key} Infected by population percentage`
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+                    yAxis: {
+                        labels: {
+                            format: '{value}%'
+                        },
+                        title: {
+                            enabled: false
+                        }
+                    },
+                    tooltip: {
+                        pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.percentage:.1f}%</b> ({point.y:,.0f})<br/>',
+                        split: true
+                    },
+                    plotOptions: {
+                        area: {
+                            stacking: 'percent',
+                            lineColor: '#ffffff',
+                            lineWidth: 1,
+                            marker: {
+                                lineWidth: 1,
+                                lineColor: '#ffffff'
+                            },
+                            accessibility: {
+                                pointDescriptionFormatter: function (point) {
+                                    function round(x) {
+                                        return Math.round(x * 100) / 100;
+                                    }
+                                    return (point.index + 1) + ', ' + point.category + ', ' +
+                                        point.y + ' millions, ' + round(point.percentage) + '%, ' +
+                                        point.series.name;
+                                }
+                            }
+                        }
+                    },
+                    series: [{
+                        name: 'Healthy',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), pop - item.confirmed - item.recovered - item.deaths]
+                        })
+                    }, {
+                        name: 'Confirmed',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
+                        })
+                    }, {
+                        name: 'Recovered',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
+                        })
+                    }, {
+                        name: 'Deaths',
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
+                        })
+                    }]
+                });
+
+            })
+                .catch(err => {
+                    if (percentageChart) {
+                        percentageChart.destroy();
+                    }
+                });
+        }
+        const getPopulation = (key) =>
+            getCountryCode(key).then(code =>
+                fetch(`https://restcountries.eu/rest/v2/alpha/${code}?fields=population`)
+                    .then(response => response.json())
+                    .then(val => val.population));
+        const getCountryCode = (key) =>
+            fetch("https://cors-anywhere.herokuapp.com/" + 'http://country.io/names.json')
+                .then(response => response.json())
+                .then(dat => {
+                    key = key.split(',').map(v => v.trim()).reverse().join(' ');
+                    const val = Object.entries(dat).find(([a, b]) => b === key);
+                    return val ? val[0] : key
+                });
+        fetch("https://pomber.github.io/covid19/timeseries.json")
+            .then(response => response.json())
+            .then(dat => {
+                const select = document.querySelector('#container2 select');
+                Object.keys(dat).sort().forEach(key => select.append(new Option(key, key)));
+                onDataLineChart(dat, "US");
+                onDataPercentageChart(dat, "US");
+
+                select.onchange = (val) => {
+                    onDataLineChart(dat, val.target.value);
+                    onDataPercentageChart(dat, val.target.value);
+                }
+            }
+            ).catch((err) => {
+                document.querySelector('#container').append(err);
+                document.querySelector('#percentage').append(err);
+            });
+    </script>
+</head>
+
+<body>
+
+    <div id="container"></div>
+    <div id="percentage"></div>
+    <div id="container2">
+        <select>
+            <option selected disabled hidden>Select a Country...</option>
+        </select>
+    </div>
+
+    <!-- <script src="https://unpkg.com/covid-charts/index.js"></script>
+    <script>
+      const chart = createChart(document.querySelector('#container2'), {
+        country: "US",
+        width: 400,
+        height: 300
+      });
+    </script> -->
+</body>
+
+</html>
