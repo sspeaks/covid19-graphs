@@ -13,13 +13,13 @@ steps:
 - task: AzureFileCopy@4
   inputs:
     SourcePath: 'index.html'
-    azureSubscription: 'Visual Studio Enterprise(2)(8b90224d-e668-44e0-966d-eaccab1d5e63)'
+    azureSubscription: 'willyouwebsite'
     Destination: 'AzureBlob'
     storage: 'mongodata'
     ContainerName: '$web'
 - task: AzureCLI@2
   inputs:
-    azureSubscription: 'Visual Studio Enterprise(3)(8b90224d-e668-44e0-966d-eaccab1d5e63)'
+    azureSubscription: 'willyouwebsite'
     scriptType: 'pscore'
     scriptLocation: 'inlineScript'
     inlineScript: 'az cdn endpoint purge -g willyouwebsite -n mongodata --profile-name mongodatacdn --content-paths "/" "/*"'
