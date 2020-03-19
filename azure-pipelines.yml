@@ -1,0 +1,25 @@
+# HTML
+# Archive your static HTML project and save it with the build record.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+- task: AzureFileCopy@4
+  inputs:
+    SourcePath: 'index.html'
+    azureSubscription: 'website-connection'
+    Destination: 'AzureBlob'
+    storage: 'mongodata'
+    ContainerName: '$web'
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'website-connection'
+    scriptType: 'pscore'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az cdn endpoint purge -g willyouwebsite -n mongodata --profile-name mongodatacdn --content-paths "/" "/*"'
