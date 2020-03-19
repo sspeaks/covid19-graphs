@@ -4,6 +4,11 @@
     <title>COVID19 Graphs</title>
     <script type="module">
         import Highcharts from 'https://code.highcharts.com/es-modules/masters/highcharts.src.js';
+
+        const recoveredColor = '#198c19';
+        const confirmedColor = '#308fa4';
+        const deathsColor = '#cc0000';
+
         let percentageChart;
         const onDataLineChart = (data, key) => {
             data = data[key]
@@ -51,18 +56,21 @@
 
                     series: [{
                         name: 'Confirmed',
+                        color: confirmedColor,
                         data: data.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
                         })
                     }, {
                         name: 'Recovered',
+                        color: recoveredColor,
                         data: data.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
                         })
                     }, {
                         name: 'Deaths',
+                        color: deathsColor,
                         data: data.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
@@ -146,23 +154,27 @@
                     },
                     series: [{
                         name: 'Healthy',
+                        color: confirmedColor,
                         data: data.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), pop - item.confirmed - item.recovered - item.deaths]
                         })
                     }, {
                         name: 'Confirmed',
+                        color: '#b55127',
                         data: data.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
                         })
                     }, {
                         name: 'Recovered',
+                        color: recoveredColor,
                         data: data.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
                         })
                     }, {
+                        color: deathsColor,
                         name: 'Deaths',
                         data: data.map(item => {
                             var split = item.date.split('-');
@@ -184,14 +196,10 @@
                     .then(response => response.json())
                     .then(val => val.population));
         const getCountryCode = (key) =>
-            fetch("https://cors-anywhere.herokuapp.com/" + 'http://country.io/names.json')
+            fetch("https://sspeaks.github.io/covid19/countries.json")
                 .then(response => response.json())
-                .then(dat => {
-                    key = key.split(',').map(v => v.trim()).reverse().join(' ');
-                    const val = Object.entries(dat).find(([a, b]) => b === key);
-                    return val ? val[0] : key
-                });
-        fetch("https://pomber.github.io/covid19/timeseries.json")
+                .then(dat => dat[key].code);
+        fetch("https://sspeaks.github.io/covid19/timeseries.json")
             .then(response => response.json())
             .then(dat => {
                 const select = document.querySelector('#container2 select');
