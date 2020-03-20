@@ -243,10 +243,19 @@
             getPopulation(key).then(pop => {
                 percentageChart = Highcharts.chart('percentage', {
                     chart: {
-                        type: 'area'
+                        type: 'area',
+                        zoomType: 'xy',
+                        resetZoomButton: {
+                            position: {
+                                align: 'left'
+                            }
+                        }
                     },
                     title: {
                         text: `${key} Infected by population percentage`
+                    },
+                    subtitle: {
+                        text: "Left-most point is when cases were first > 100"
                     },
                     xAxis: {
                         type: 'datetime',
@@ -302,14 +311,14 @@
                         color: confirmedColor,
                         data: data.map(item => {
                             var split = item.date.split('-');
-                            return [Date.UTC(split[0], split[1] - 1, split[2]), pop - item.confirmed - item.recovered - item.deaths]
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), pop - (item.confirmed - item.recovered - item.deaths) - item.recovered - item.deaths]
                         })
                     }, {
-                        name: 'Confirmed',
+                        name: 'Active',
                         color: '#b55127',
                         data: data.map(item => {
                             var split = item.date.split('-');
-                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
                         })
                     }, {
                         name: 'Recovered',
@@ -327,6 +336,15 @@
                         })
                     }]
                 });
+                const last = data[data.length - 1];
+                let split = last.date.split('-');
+                const lastDate = Date.UTC(split[0], split[1] - 1, split[2]);
+                const firstOver100 = data.find(item => item.confirmed >= 100);
+                split = firstOver100.date.split('-');
+                const extremeDate = Date.UTC(split[0], split[1] - 1, split[2]);
+                percentageChart.yAxis[0].setExtremes(0, 100 * (last.confirmed) / pop);
+                percentageChart.xAxis[0].setExtremes(extremeDate, lastDate);
+                percentageChart.showResetZoom();
 
             })
                 .catch(err => {
