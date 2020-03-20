@@ -93,6 +93,77 @@
                     }
                 })
         };
+        const onDataAggregatChart = (data) => {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
+            aggData = aggData.slice(0, 10);
+            console.log(aggData);
+            Highcharts.chart('allcountries',
+                {
+                    title: {
+                        text: `Top 10 Countries COVID19 Cases`
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
+                        title: {
+                            text: 'Cases'
+                        }
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
+                        })
+                    })),
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
         const onDataPercentageChart = (data, key) => {
             data = data[key];
             getPopulation(key).then(pop => {
@@ -206,6 +277,7 @@
                 Object.keys(dat).sort().forEach(key => select.append(new Option(key, key)));
                 onDataLineChart(dat, "US");
                 onDataPercentageChart(dat, "US");
+                onDataAggregatChart(dat);
 
                 select.onchange = (val) => {
                     onDataLineChart(dat, val.target.value);
@@ -227,10 +299,11 @@
         <select>
             <option selected disabled hidden>Select a Country...</option>
         </select>
-        <p style="float: right">
-            Data Source <a href="https://github.com/pomber/covid19">https://github.com/pomber/covid19</a>
-        </p>
     </div>
+    <div id="allcountries"></div>
+    <p style="float: right">
+        Data Source <a href="https://github.com/pomber/covid19">https://github.com/pomber/covid19</a>
+    </p>
 
     <!-- <script src="https://unpkg.com/covid-charts/index.js"></script>
     <script>
