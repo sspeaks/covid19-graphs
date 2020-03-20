@@ -166,7 +166,7 @@
             };
         const onDataAggregatActiveChart = (data) => {
                 let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
+                aggData.sort(([k1, a], [k2, b]) => (b[b.length - 1].confirmed - b[b.length - 1].recovered - b[b.length - 1].deaths) - (a[a.length - 1].confirmed - a[a.length - 1].recovered - a[a.length - 1].deaths));
                 aggData = aggData.slice(0, 10);
                 console.log(aggData);
                 Highcharts.chart('allcountriesactive',
@@ -175,7 +175,7 @@
                             text: `Top 10 Countries COVID19 Active Cases`
                         },
                         subtitle: {
-                            text: "Confirmed - Recovered - Deaths"
+                            text: "Active = Confirmed - Recovered - Deaths"
                         },
                         chart: {
                             zoomType: 'xy'
