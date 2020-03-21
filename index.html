@@ -93,7 +93,7 @@
                     }
                 })
         };
-        const onDataAggregatChart = (data) => {
+        const onDataAggregateChart = (data) => {
                 let aggData = Object.entries(data);
                 aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
                 aggData = aggData.slice(0, 10);
@@ -101,7 +101,7 @@
                 Highcharts.chart('allcountries',
                     {
                         title: {
-                            text: `Top 10 Countries COVID19 Comfirmed Cases`
+                            text: `Top 10 Countries COVID19 Confirmed Cases`
                         },
                         chart: {
                             zoomType: 'xy'
@@ -164,7 +164,78 @@
                         }
                     })
             };
-        const onDataAggregatActiveChart = (data) => {
+        const onDataAggregateDeathsChart = (data) => {
+                let aggData = Object.entries(data);
+                aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
+                aggData = aggData.slice(0, 10);
+                console.log(aggData);
+                Highcharts.chart('allcountriesdeaths',
+                    {
+                        title: {
+                            text: `Top 10 Countries COVID19 Deaths`
+                        },
+                        chart: {
+                            zoomType: 'xy'
+                        },
+
+                        yAxis: {
+                            title: {
+                                text: 'Cases'
+                            }
+                        },
+
+                        tooltip: {
+                            split: true
+                        },
+
+                        xAxis: {
+                            type: 'datetime',
+                            title: {
+                                text: 'Date'
+                            },
+                            // labels: {
+                            //     format: '%Y-%b-%e'
+                            // },
+                            labels: {
+                                format: '{value:%Y-%m-%d}',
+                            }
+                            // dateTimeLabelFormats: {
+                            //     day: "%e-%b-%y",
+                            //     month: "%b-%y"
+                            // }
+                        },
+
+                        legend: {
+                            layout: 'vertical',
+                            align: 'right',
+                            verticalAlign: 'middle'
+                        },
+
+                        series: aggData.map(([key, value]) => ({
+                            name: key,
+                            data: value.map(item => {
+                                var split = item.date.split('-');
+                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
+                            })
+                        })),
+
+                        responsive: {
+                            rules: [{
+                                condition: {
+                                    maxWidth: 500
+                                },
+                                chartOptions: {
+                                    legend: {
+                                        layout: 'horizontal',
+                                        align: 'center',
+                                        verticalAlign: 'bottom'
+                                    }
+                                }
+                            }]
+                        }
+                    })
+            };
+        const onDataAggregateActiveChart = (data) => {
                 let aggData = Object.entries(data);
                 aggData.sort(([k1, a], [k2, b]) => (b[b.length - 1].confirmed - b[b.length - 1].recovered - b[b.length - 1].deaths) - (a[a.length - 1].confirmed - a[a.length - 1].recovered - a[a.length - 1].deaths));
                 aggData = aggData.slice(0, 10);
@@ -369,8 +440,9 @@
                 Object.keys(dat).sort().forEach(key => select.append(new Option(key, key)));
                 onDataLineChart(dat, "US");
                 onDataPercentageChart(dat, "US");
-                onDataAggregatChart(dat);
-                onDataAggregatActiveChart(dat);
+                onDataAggregateChart(dat);
+                onDataAggregateActiveChart(dat);
+                onDataAggregateDeathsChart(dat);
 
                 select.onchange = (val) => {
                     onDataLineChart(dat, val.target.value);
@@ -395,6 +467,7 @@
     </div>
     <div id="allcountries"></div>
     <div id="allcountriesactive"></div>
+    <div id="allcountriesdeaths"></div>
     <p style="float: right">
         Data Source <a href="https://github.com/pomber/covid19">https://github.com/pomber/covid19</a>
     </p>
