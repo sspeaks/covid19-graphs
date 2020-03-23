@@ -12,10 +12,97 @@
         let percentageChart;
         const onDataLineChart = (data, key) => {
             data = data[key]
-            Highcharts.chart('container',
+            let top10 = Object.entries(data[data.length - 1]).filter(([item, _]) => item !== "date" && item !== "confirmed" && item !== "deaths" && item !== "recovered" && item !== "")
+                .sort(([k1, a], [k2, b]) => b.confirmed - a.confirmed);
+            top10 = top10.slice(0, 10);
+            const chartMe = (id, suffix) => {
+                const el = document.querySelector('#' + id);
+                Highcharts.chart(id,
+                    {
+                        title: {
+                            text: `${key} COVID19 Cases ${suffix}`
+                        },
+                        chart: {
+                            zoomType: 'xy'
+                        },
+
+                        yAxis: {
+                            title: {
+                                text: 'Cases'
+                            }
+                        },
+
+                        tooltip: {
+                            split: true
+                        },
+
+                        xAxis: {
+                            type: 'datetime',
+                            title: {
+                                text: 'Date'
+                            },
+                            // labels: {
+                            //     format: '%Y-%b-%e'
+                            // },
+                            labels: {
+                                format: '{value:%Y-%m-%d}',
+                            }
+                            // dateTimeLabelFormats: {
+                            //     day: "%e-%b-%y",
+                            //     month: "%b-%y"
+                            // }
+                        },
+
+                        legend: {
+                            layout: 'vertical',
+                            align: 'right',
+                            verticalAlign: 'middle'
+                        },
+
+                        series: top10.map(([province, _]) => ({
+                            name: province,
+                            data: data.map(val => {
+                                var split = val.date.split('-');
+                                return [Date.UTC(split[0], split[1] - 1, split[2]), val[province][suffix.toLowerCase()]]
+                            })
+                        })),
+
+                        responsive: {
+                            rules: [{
+                                condition: {
+                                    maxWidth: 500
+                                },
+                                chartOptions: {
+                                    legend: {
+                                        layout: 'horizontal',
+                                        align: 'center',
+                                        verticalAlign: 'bottom'
+                                    }
+                                }
+                            }]
+                        }
+                    })
+            }
+            if (top10.length === 0) {
+                Highcharts.charts.forEach(chart => {
+                    if (chart && ['containerConfirmed', 'containerDeaths', 'containerRecovered'].includes(chart.renderTo.id)) {
+                        chart.destroy();
+                    }
+                });
+            } else {
+                chartMe('containerConfirmed', 'Confirmed');
+                chartMe('containerDeaths', 'Deaths');
+                chartMe('containerRecovered', 'Recovered');
+            }
+        };
+        const onDataAggregateChart = (data) => {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
+            aggData = aggData.slice(0, 10);
+            Highcharts.chart('allcountries',
                 {
                     title: {
-                        text: `${key} COVID19 Cases`
+                        text: `Top 10 Countries COVID19 Confirmed Cases`
                     },
                     chart: {
                         zoomType: 'xy'
@@ -54,28 +141,13 @@
                         verticalAlign: 'middle'
                     },
 
-                    series: [{
-                        name: 'Confirmed',
-                        color: confirmedColor,
-                        data: data.map(item => {
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
                         })
-                    }, {
-                        name: 'Recovered',
-                        color: recoveredColor,
-                        data: data.map(item => {
-                            var split = item.date.split('-');
-                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
-                        })
-                    }, {
-                        name: 'Deaths',
-                        color: deathsColor,
-                        data: data.map(item => {
-                            var split = item.date.split('-');
-                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
-                        })
-                    }],
+                    })),
 
                     responsive: {
                         rules: [{
@@ -93,222 +165,149 @@
                     }
                 })
         };
-        const onDataAggregateChart = (data) => {
-                let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
-                aggData = aggData.slice(0, 10);
-                console.log(aggData);
-                Highcharts.chart('allcountries',
-                    {
-                        title: {
-                            text: `Top 10 Countries COVID19 Confirmed Cases`
-                        },
-                        chart: {
-                            zoomType: 'xy'
-                        },
-
-                        yAxis: {
-                            title: {
-                                text: 'Cases'
-                            }
-                        },
-
-                        tooltip: {
-                            split: true
-                        },
-
-                        xAxis: {
-                            type: 'datetime',
-                            title: {
-                                text: 'Date'
-                            },
-                            // labels: {
-                            //     format: '%Y-%b-%e'
-                            // },
-                            labels: {
-                                format: '{value:%Y-%m-%d}',
-                            }
-                            // dateTimeLabelFormats: {
-                            //     day: "%e-%b-%y",
-                            //     month: "%b-%y"
-                            // }
-                        },
-
-                        legend: {
-                            layout: 'vertical',
-                            align: 'right',
-                            verticalAlign: 'middle'
-                        },
-
-                        series: aggData.map(([key, value]) => ({
-                            name: key,
-                            data: value.map(item => {
-                                var split = item.date.split('-');
-                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
-                            })
-                        })),
-
-                        responsive: {
-                            rules: [{
-                                condition: {
-                                    maxWidth: 500
-                                },
-                                chartOptions: {
-                                    legend: {
-                                        layout: 'horizontal',
-                                        align: 'center',
-                                        verticalAlign: 'bottom'
-                                    }
-                                }
-                            }]
-                        }
-                    })
-            };
         const onDataAggregateDeathsChart = (data) => {
-                let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
-                aggData = aggData.slice(0, 10);
-                console.log(aggData);
-                Highcharts.chart('allcountriesdeaths',
-                    {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
+            aggData = aggData.slice(0, 10);
+            Highcharts.chart('allcountriesdeaths',
+                {
+                    title: {
+                        text: `Top 10 Countries COVID19 Deaths`
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
                         title: {
-                            text: `Top 10 Countries COVID19 Deaths`
-                        },
-                        chart: {
-                            zoomType: 'xy'
-                        },
-
-                        yAxis: {
-                            title: {
-                                text: 'Cases'
-                            }
-                        },
-
-                        tooltip: {
-                            split: true
-                        },
-
-                        xAxis: {
-                            type: 'datetime',
-                            title: {
-                                text: 'Date'
-                            },
-                            // labels: {
-                            //     format: '%Y-%b-%e'
-                            // },
-                            labels: {
-                                format: '{value:%Y-%m-%d}',
-                            }
-                            // dateTimeLabelFormats: {
-                            //     day: "%e-%b-%y",
-                            //     month: "%b-%y"
-                            // }
-                        },
-
-                        legend: {
-                            layout: 'vertical',
-                            align: 'right',
-                            verticalAlign: 'middle'
-                        },
-
-                        series: aggData.map(([key, value]) => ({
-                            name: key,
-                            data: value.map(item => {
-                                var split = item.date.split('-');
-                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
-                            })
-                        })),
-
-                        responsive: {
-                            rules: [{
-                                condition: {
-                                    maxWidth: 500
-                                },
-                                chartOptions: {
-                                    legend: {
-                                        layout: 'horizontal',
-                                        align: 'center',
-                                        verticalAlign: 'bottom'
-                                    }
-                                }
-                            }]
+                            text: 'Cases'
                         }
-                    })
-            };
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
+                        })
+                    })),
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
         const onDataAggregateActiveChart = (data) => {
-                let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => (b[b.length - 1].confirmed - b[b.length - 1].recovered - b[b.length - 1].deaths) - (a[a.length - 1].confirmed - a[a.length - 1].recovered - a[a.length - 1].deaths));
-                aggData = aggData.slice(0, 10);
-                console.log(aggData);
-                Highcharts.chart('allcountriesactive',
-                    {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => (b[b.length - 1].confirmed - b[b.length - 1].recovered - b[b.length - 1].deaths) - (a[a.length - 1].confirmed - a[a.length - 1].recovered - a[a.length - 1].deaths));
+            aggData = aggData.slice(0, 10);
+            Highcharts.chart('allcountriesactive',
+                {
+                    title: {
+                        text: `Top 10 Countries COVID19 Active Cases`
+                    },
+                    subtitle: {
+                        text: "Active = Confirmed - Recovered - Deaths"
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
                         title: {
-                            text: `Top 10 Countries COVID19 Active Cases`
-                        },
-                        subtitle: {
-                            text: "Active = Confirmed - Recovered - Deaths"
-                        },
-                        chart: {
-                            zoomType: 'xy'
-                        },
-
-                        yAxis: {
-                            title: {
-                                text: 'Cases'
-                            }
-                        },
-
-                        tooltip: {
-                            split: true
-                        },
-
-                        xAxis: {
-                            type: 'datetime',
-                            title: {
-                                text: 'Date'
-                            },
-                            // labels: {
-                            //     format: '%Y-%b-%e'
-                            // },
-                            labels: {
-                                format: '{value:%Y-%m-%d}',
-                            }
-                            // dateTimeLabelFormats: {
-                            //     day: "%e-%b-%y",
-                            //     month: "%b-%y"
-                            // }
-                        },
-
-                        legend: {
-                            layout: 'vertical',
-                            align: 'right',
-                            verticalAlign: 'middle'
-                        },
-
-                        series: aggData.map(([key, value]) => ({
-                            name: key,
-                            data: value.map(item => {
-                                var split = item.date.split('-');
-                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
-                            })
-                        })),
-
-                        responsive: {
-                            rules: [{
-                                condition: {
-                                    maxWidth: 500
-                                },
-                                chartOptions: {
-                                    legend: {
-                                        layout: 'horizontal',
-                                        align: 'center',
-                                        verticalAlign: 'bottom'
-                                    }
-                                }
-                            }]
+                            text: 'Cases'
                         }
-                    })
-            };
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
+                        })
+                    })),
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
         const onDataPercentageChart = (data, key) => {
             data = data[key];
             getPopulation(key).then(pop => {
@@ -450,16 +449,16 @@
                 }
             }
             ).catch((err) => {
-                document.querySelector('#container').append(err);
-                document.querySelector('#percentage').append(err);
+                console.log(err);
             });
     </script>
 </head>
 
 <body>
-
-    <div id="container"></div>
     <div id="percentage"></div>
+    <div id="containerConfirmed"></div>
+    <div id="containerDeaths"></div>
+    <div id="containerRecovered"></div>
     <div id="container2">
         <select>
             <option selected disabled hidden>Select a Country...</option>
