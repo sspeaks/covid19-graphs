@@ -11,7 +11,12 @@
 
         let percentageChart;
         const onDataLineChart = (data, key) => {
-            data = data[key]
+            data = data[key];
+            const index = data.findIndex(point => {
+                return !!Object.entries(point).filter(([item, _]) => item !== "date" && item !== "confirmed" && item !== "deaths" && item !== "recovered" && item !== "")
+                    .find(([key, item], index) => item.confirmed >= 100);
+            });
+            data = data.slice(index);
             let top10 = Object.entries(data[data.length - 1]).filter(([item, _]) => item !== "date" && item !== "confirmed" && item !== "deaths" && item !== "recovered" && item !== "")
                 .sort(([k1, a], [k2, b]) => b.confirmed - a.confirmed);
             top10 = top10.slice(0, 10);
@@ -20,7 +25,10 @@
                 Highcharts.chart(id,
                     {
                         title: {
-                            text: `${key} COVID19 Cases ${suffix}`
+                            text: `${key} COVID19 Cases by Province: ${suffix}`
+                        },
+                        subtitle: {
+                            text: 'Left-most point is when confirmed cases were first > 100'
                         },
                         chart: {
                             zoomType: 'xy'
