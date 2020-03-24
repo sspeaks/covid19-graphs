@@ -391,13 +391,13 @@
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
                         })
-                    }, {
-                        name: 'Recovered',
-                        color: recoveredColor,
-                        data: data.map(item => {
-                            var split = item.date.split('-');
-                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
-                        })
+                    // }, {
+                    //     name: 'Recovered',
+                    //     color: recoveredColor,
+                    //     data: data.map(item => {
+                    //         var split = item.date.split('-');
+                    //         return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
+                    //     })
                     }, {
                         color: deathsColor,
                         name: 'Deaths',
@@ -441,7 +441,7 @@
                 onDataLineChart(dat, "US");
                 onDataPercentageChart(dat, "US");
                 onDataAggregateChart(dat);
-                onDataAggregateActiveChart(dat);
+                // onDataAggregateActiveChart(dat);
                 onDataAggregateDeathsChart(dat);
 
                 select.onchange = (val) => {
