@@ -4,12 +4,161 @@
     <title>COVID19 Graphs</title>
     <script type="module">
         import Highcharts from 'https://code.highcharts.com/es-modules/masters/highcharts.src.js';
+        import 'https://code.highcharts.com/es-modules/masters/highcharts-more.src.js'
+
+        Highcharts.setOptions({
+                lang: {
+                    thousandsSep: ','
+                }
+            });
 
         const recoveredColor = '#198c19';
         const confirmedColor = '#308fa4';
         const deathsColor = '#cc0000';
 
         let percentageChart;
+        const onDataScatterChart = data => {
+            function StaggerDataLabels(series) {
+                let newSeries = series[0].data;
+                let sc = newSeries.length;
+                if(sc < 2) return;
+
+                for (let s = 1; s < sc - 1; s++) {
+                    for (let t = s+1; t < sc; t++) {
+                    var s1 = newSeries[s],
+                        s2 = newSeries[t],
+                        l = s1.length,
+                        diff, h;
+                        if (s1.dataLabel && s2.dataLabel) {
+                            diff = s1.dataLabel.y - s2.dataLabel.y;
+                            h = s1.dataLabel.height + 2;
+
+                            if (isLabelOnLabel(s1.dataLabel, s2.dataLabel)) {
+                                if (diff < 0) s1.dataLabel.translate(s1.dataLabel.translateX , s1.dataLabel.translateY) - (h + diff);
+                                else s2.dataLabel.translate(s2.dataLabel.translateX , s2.dataLabel.translateY) - (h - diff);
+                            }
+                        }
+                    }
+                }
+            }
+
+            //compares two datalabels and returns true if they overlap
+
+
+            function isLabelOnLabel(a, b) {
+                var al = a.x - (a.width / 2);
+                var ar = a.x + (a.width / 2);
+                var bl = b.x - (b.width / 2);
+                var br = b.x + (b.width / 2);
+
+                var at = a.y;
+                var ab = a.y + a.height;
+                var bt = b.y;
+                var bb = b.y + b.height;
+
+                if (bl > ar || br < al) {
+                    return false;
+                } //overlap not possible
+                if (bt > ab || bb < at) {
+                    return false;
+                } //overlap not possible
+                if (bl > al && bl < ar) {
+                    return true;
+                }
+                if (br > al && br < ar) {
+                    return true;
+                }
+
+                if (bt > at && bt < ab) {
+                    return true;
+                }
+                if (bb > at && bb < ab) {
+                    return true;
+                }
+
+                return false;
+            }
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
+            aggData = aggData.slice(0, 20);
+            data = aggData.reduce((agg, ind) => {
+                agg[ind[0]] = ind[1];
+                return agg
+            }, {});
+            Highcharts.chart('scatterAge',
+                {
+                    title: {
+                        text:  `Death Rate vs Median Age`
+                    },
+                    chart: {
+                        type: 'bubble',
+                        zoomType: 'xy',
+                         events: {
+                            load: function () {
+                                StaggerDataLabels(this.series);
+                            },
+                            redraw: function () {
+                                var series = this.series;
+                                setTimeout(function () {
+                                    StaggerDataLabels(series);
+                                }, 1000);
+                            }
+                        }
+                    },
+
+                    yAxis: {
+                        title: {
+                            text: 'Deaths/Million'
+                        }
+                    },
+
+                    xAxis: {
+                        title: {
+                            text: 'Median Age'
+                        }
+                    },
+
+                    legend: {
+                        enabled: false
+                    },
+
+                    tooltip: {
+                        useHTML: true,
+                        headerFormat: '<table>',
+                        pointFormat: '<tr><th colspan="2"><h3>{point.name}</h3></th></tr>' +
+                            '<tr><th>Median Age:</th><td>{point.x}</td></tr>' +
+                            '<tr><th>Deaths / Million:</th><td>{point.y:,.2f}</td></tr>' +
+                            '<tr><th>Confirmed / Million:</th><td>{point.z:,.2f}</td></tr>',
+                        footerFormat: '</table>',
+                        followPointer: true
+                    },
+
+                     plotOptions: {
+                        series: {
+                            dataLabels: {
+                                allowOverlap: false,
+                                enabled: true,
+                                format: '{point.name}',
+                                // inside: false
+                            }
+                        }
+                    },
+
+                    series: [{
+                        data: Object.entries(medianAges).filter(([key, value]) => data[value.name]).map(([key, value], index) => {
+                            return {
+                                x: value.medianAge,
+                                y: data[value.name][data[value.name].length - 1].deaths / (value.population / 1000000),
+                                z: data[value.name][data[value.name].length - 1].confirmed / (value.population / 1000000),
+                                labelrank: index + 1,
+                                name: value.name,
+                                country: key
+                            }
+                        })
+                    }]
+                })
+        };
+
         const onDataLineChart = (data, key) => {
             data = data[key]
             Highcharts.chart('container',
@@ -94,221 +243,221 @@
                 })
         };
         const onDataAggregateChart = (data) => {
-                let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
-                aggData = aggData.slice(0, 10);
-                console.log(aggData);
-                Highcharts.chart('allcountries',
-                    {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
+            aggData = aggData.slice(0, 10);
+            console.log(aggData);
+            Highcharts.chart('allcountries',
+                {
+                    title: {
+                        text: `Top 10 Countries COVID19 Confirmed Cases`
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
                         title: {
-                            text: `Top 10 Countries COVID19 Confirmed Cases`
-                        },
-                        chart: {
-                            zoomType: 'xy'
-                        },
-
-                        yAxis: {
-                            title: {
-                                text: 'Cases'
-                            }
-                        },
-
-                        tooltip: {
-                            split: true
-                        },
-
-                        xAxis: {
-                            type: 'datetime',
-                            title: {
-                                text: 'Date'
-                            },
-                            // labels: {
-                            //     format: '%Y-%b-%e'
-                            // },
-                            labels: {
-                                format: '{value:%Y-%m-%d}',
-                            }
-                            // dateTimeLabelFormats: {
-                            //     day: "%e-%b-%y",
-                            //     month: "%b-%y"
-                            // }
-                        },
-
-                        legend: {
-                            layout: 'vertical',
-                            align: 'right',
-                            verticalAlign: 'middle'
-                        },
-
-                        series: aggData.map(([key, value]) => ({
-                            name: key,
-                            data: value.map(item => {
-                                var split = item.date.split('-');
-                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
-                            })
-                        })),
-
-                        responsive: {
-                            rules: [{
-                                condition: {
-                                    maxWidth: 500
-                                },
-                                chartOptions: {
-                                    legend: {
-                                        layout: 'horizontal',
-                                        align: 'center',
-                                        verticalAlign: 'bottom'
-                                    }
-                                }
-                            }]
+                            text: 'Cases'
                         }
-                    })
-            };
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed]
+                        })
+                    })),
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
         const onDataAggregateDeathsChart = (data) => {
-                let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
-                aggData = aggData.slice(0, 10);
-                console.log(aggData);
-                Highcharts.chart('allcountriesdeaths',
-                    {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
+            aggData = aggData.slice(0, 10);
+            console.log(aggData);
+            Highcharts.chart('allcountriesdeaths',
+                {
+                    title: {
+                        text: `Top 10 Countries COVID19 Deaths`
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
                         title: {
-                            text: `Top 10 Countries COVID19 Deaths`
-                        },
-                        chart: {
-                            zoomType: 'xy'
-                        },
-
-                        yAxis: {
-                            title: {
-                                text: 'Cases'
-                            }
-                        },
-
-                        tooltip: {
-                            split: true
-                        },
-
-                        xAxis: {
-                            type: 'datetime',
-                            title: {
-                                text: 'Date'
-                            },
-                            // labels: {
-                            //     format: '%Y-%b-%e'
-                            // },
-                            labels: {
-                                format: '{value:%Y-%m-%d}',
-                            }
-                            // dateTimeLabelFormats: {
-                            //     day: "%e-%b-%y",
-                            //     month: "%b-%y"
-                            // }
-                        },
-
-                        legend: {
-                            layout: 'vertical',
-                            align: 'right',
-                            verticalAlign: 'middle'
-                        },
-
-                        series: aggData.map(([key, value]) => ({
-                            name: key,
-                            data: value.map(item => {
-                                var split = item.date.split('-');
-                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
-                            })
-                        })),
-
-                        responsive: {
-                            rules: [{
-                                condition: {
-                                    maxWidth: 500
-                                },
-                                chartOptions: {
-                                    legend: {
-                                        layout: 'horizontal',
-                                        align: 'center',
-                                        verticalAlign: 'bottom'
-                                    }
-                                }
-                            }]
+                            text: 'Cases'
                         }
-                    })
-            };
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.deaths]
+                        })
+                    })),
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
         const onDataAggregateActiveChart = (data) => {
-                let aggData = Object.entries(data);
-                aggData.sort(([k1, a], [k2, b]) => (b[b.length - 1].confirmed - b[b.length - 1].recovered - b[b.length - 1].deaths) - (a[a.length - 1].confirmed - a[a.length - 1].recovered - a[a.length - 1].deaths));
-                aggData = aggData.slice(0, 10);
-                console.log(aggData);
-                Highcharts.chart('allcountriesactive',
-                    {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => (b[b.length - 1].confirmed - b[b.length - 1].recovered - b[b.length - 1].deaths) - (a[a.length - 1].confirmed - a[a.length - 1].recovered - a[a.length - 1].deaths));
+            aggData = aggData.slice(0, 10);
+            console.log(aggData);
+            Highcharts.chart('allcountriesactive',
+                {
+                    title: {
+                        text: `Top 10 Countries COVID19 Active Cases`
+                    },
+                    subtitle: {
+                        text: "Active = Confirmed - Recovered - Deaths"
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
                         title: {
-                            text: `Top 10 Countries COVID19 Active Cases`
-                        },
-                        subtitle: {
-                            text: "Active = Confirmed - Recovered - Deaths"
-                        },
-                        chart: {
-                            zoomType: 'xy'
-                        },
-
-                        yAxis: {
-                            title: {
-                                text: 'Cases'
-                            }
-                        },
-
-                        tooltip: {
-                            split: true
-                        },
-
-                        xAxis: {
-                            type: 'datetime',
-                            title: {
-                                text: 'Date'
-                            },
-                            // labels: {
-                            //     format: '%Y-%b-%e'
-                            // },
-                            labels: {
-                                format: '{value:%Y-%m-%d}',
-                            }
-                            // dateTimeLabelFormats: {
-                            //     day: "%e-%b-%y",
-                            //     month: "%b-%y"
-                            // }
-                        },
-
-                        legend: {
-                            layout: 'vertical',
-                            align: 'right',
-                            verticalAlign: 'middle'
-                        },
-
-                        series: aggData.map(([key, value]) => ({
-                            name: key,
-                            data: value.map(item => {
-                                var split = item.date.split('-');
-                                return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
-                            })
-                        })),
-
-                        responsive: {
-                            rules: [{
-                                condition: {
-                                    maxWidth: 500
-                                },
-                                chartOptions: {
-                                    legend: {
-                                        layout: 'horizontal',
-                                        align: 'center',
-                                        verticalAlign: 'bottom'
-                                    }
-                                }
-                            }]
+                            text: 'Cases'
                         }
-                    })
-            };
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+
+                    xAxis: {
+                        type: 'datetime',
+                        title: {
+                            text: 'Date'
+                        },
+                        // labels: {
+                        //     format: '%Y-%b-%e'
+                        // },
+                        labels: {
+                            format: '{value:%Y-%m-%d}',
+                        }
+                        // dateTimeLabelFormats: {
+                        //     day: "%e-%b-%y",
+                        //     month: "%b-%y"
+                        // }
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
+                        })
+                    })),
+
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    layout: 'horizontal',
+                                    align: 'center',
+                                    verticalAlign: 'bottom'
+                                }
+                            }
+                        }]
+                    }
+                })
+        };
         const onDataPercentageChart = (data, key) => {
             data = data[key];
             getPopulation(key).then(pop => {
@@ -391,13 +540,13 @@
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
                         })
-                    // }, {
-                    //     name: 'Recovered',
-                    //     color: recoveredColor,
-                    //     data: data.map(item => {
-                    //         var split = item.date.split('-');
-                    //         return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
-                    //     })
+                        // }, {
+                        //     name: 'Recovered',
+                        //     color: recoveredColor,
+                        //     data: data.map(item => {
+                        //         var split = item.date.split('-');
+                        //         return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
+                        //     })
                     }, {
                         color: deathsColor,
                         name: 'Deaths',
@@ -443,6 +592,7 @@
                 onDataAggregateChart(dat);
                 // onDataAggregateActiveChart(dat);
                 onDataAggregateDeathsChart(dat);
+                onDataScatterChart(dat);
 
                 select.onchange = (val) => {
                     onDataLineChart(dat, val.target.value);
@@ -453,11 +603,929 @@
                 document.querySelector('#container').append(err);
                 document.querySelector('#percentage').append(err);
             });
+
+        const medianAges = {
+            "AFG": {
+                "name": "Afghanistan",
+                "medianAge": 16.5,
+                "population": 34656000
+            },
+            "ALB": {
+                "name": "Albania",
+                "medianAge": 32.56,
+                "population": 2926000
+            },
+            "DZA": {
+                "name": "Algeria",
+                "medianAge": 26.9,
+                "population": 40606000
+            },
+            "AGO": {
+                "name": "Angola",
+                "medianAge": 16.18,
+                "population": 28813000
+            },
+            "ATG": {
+                "name": "Antigua and Barbuda",
+                "medianAge": 30.26,
+                "population": 101000
+            },
+            "ARG": {
+                "name": "Argentina",
+                "medianAge": 31.1,
+                "population": 43847000
+            },
+            "ARM": {
+                "name": "Armenia",
+                "medianAge": 32.7,
+                "population": 2925000
+            },
+            "AUS": {
+                "name": "Australia",
+                "medianAge": 37.2,
+                "population": 24126000
+            },
+            "AUT": {
+                "name": "Austria",
+                "medianAge": 42.4,
+                "population": 8712000
+            },
+            "AZE": {
+                "name": "Azerbaijan",
+                "medianAge": 29.34,
+                "population": 9725000
+            },
+            "BHS": {
+                "name": "Bahamas",
+                "medianAge": 31.54,
+                "population": 391000
+            },
+            "BHR": {
+                "name": "Bahrain",
+                "medianAge": 30.07,
+                "population": 1425000
+            },
+            "BGD": {
+                "name": "Bangladesh",
+                "medianAge": 25.1,
+                "population": 162952000
+            },
+            "BRB": {
+                "name": "Barbados",
+                "medianAge": 36.9,
+                "population": 285000
+            },
+            "BLR": {
+                "name": "Belarus",
+                "medianAge": 39.3,
+                "population": 9480000
+            },
+            "BEL": {
+                "name": "Belgium",
+                "medianAge": 41.6,
+                "population": 11358000
+            },
+            "BLZ": {
+                "name": "Belize",
+                "medianAge": 23,
+                "population": 367000
+            },
+            "BEN": {
+                "name": "Benin",
+                "medianAge": 18.4,
+                "population": 10872000
+            },
+            "BTN": {
+                "name": "Bhutan",
+                "medianAge": 25.29,
+                "population": 798000
+            },
+            "BOL": {
+                "name": "Bolivia (Plurinational State of)",
+                "medianAge": 22.14,
+                "population": 10888000
+            },
+            "BIH": {
+                "name": "Bosnia and Herzegovina",
+                "medianAge": 39.23,
+                "population": 3517000
+            },
+            "BWA": {
+                "name": "Botswana",
+                "medianAge": 22.5,
+                "population": 2250000
+            },
+            "BRA": {
+                "name": "Brazil",
+                "medianAge": 30.3,
+                "population": 207653000
+            },
+            "BRN": {
+                "name": "Brunei Darussalam",
+                "medianAge": 30.5,
+                "population": 423000
+            },
+            "BGR": {
+                "name": "Bulgaria",
+                "medianAge": 43,
+                "population": 7131000
+            },
+            "BFA": {
+                "name": "Burkina Faso",
+                "medianAge": 17.1,
+                "population": 18646000
+            },
+            "BDI": {
+                "name": "Burundi",
+                "medianAge": 17.64,
+                "population": 10524000
+            },
+            "KHM": {
+                "name": "Cambodia",
+                "medianAge": 24.1,
+                "population": 15762000
+            },
+            "CMR": {
+                "name": "Cameroon",
+                "medianAge": 18.18,
+                "population": 23439000
+            },
+            "CAN": {
+                "name": "Canada",
+                "medianAge": 39.99,
+                "population": 36290000
+            },
+            "CPV": {
+                "name": "Cabo Verde",
+                "medianAge": 24.2,
+                "population": 540000
+            },
+            "CAF": {
+                "name": "Central African Republic",
+                "medianAge": 19.7,
+                "population": 4595000
+            },
+            "TCD": {
+                "name": "Chad",
+                "medianAge": 15.8,
+                "population": 14453000
+            },
+            "CHL": {
+                "name": "Chile",
+                "medianAge": 33.1,
+                "population": 17910000
+            },
+            "CHN": {
+                "name": "China",
+                "medianAge": 37.4,
+                "population": 1411415000
+            },
+            "COL": {
+                "name": "Colombia",
+                "medianAge": 27.7,
+                "population": 48653000
+            },
+            "COM": {
+                "name": "Comoros",
+                "medianAge": 19.08,
+                "population": 796000
+            },
+            "COG": {
+                "name": "Congo",
+                "medianAge": 18.8,
+                "population": 5126000
+            },
+            "CRI": {
+                "name": "Costa Rica",
+                "medianAge": 29.7,
+                "population": 4857000
+            },
+            "HRV": {
+                "name": "Croatia",
+                "medianAge": 42.6,
+                "population": 4213000
+            },
+            "CUB": {
+                "name": "Cuba",
+                "medianAge": 40.1,
+                "population": 11476000
+            },
+            "CYP": {
+                "name": "Cyprus",
+                "medianAge": 34.88,
+                "population": 1170000
+            },
+            "CZE": {
+                "name": "Czechia",
+                "medianAge": 40.07,
+                "population": 10611000
+            },
+            "CIV": {
+                "name": "Côte d'Ivoire",
+                "medianAge": 19,
+                "population": 23696000
+            },
+            "PRK": {
+                "name": "Democratic People's Republic of Korea",
+                "medianAge": 33.4,
+                "population": 25369000
+            },
+            "COD": {
+                "name": "Democratic Republic of the Congo",
+                "medianAge": 17.4,
+                "population": 78736000
+            },
+            "DNK": {
+                "name": "Denmark",
+                "medianAge": 41.1,
+                "population": 5712000
+            },
+            "DJI": {
+                "name": "Djibouti",
+                "medianAge": 22.8,
+                "population": 942000
+            },
+            "DOM": {
+                "name": "Dominican Republic",
+                "medianAge": 25.8,
+                "population": 10649000
+            },
+            "ECU": {
+                "name": "Ecuador",
+                "medianAge": 25.83,
+                "population": 16385000
+            },
+            "EGY": {
+                "name": "Egypt",
+                "medianAge": 25.2,
+                "population": 95689000
+            },
+            "SLV": {
+                "name": "El Salvador",
+                "medianAge": 23.78,
+                "population": 6345000
+            },
+            "GNQ": {
+                "name": "Equatorial Guinea",
+                "medianAge": 20.6,
+                "population": 1221000
+            },
+            "ERI": {
+                "name": "Eritrea",
+                "medianAge": 18.4,
+                "population": 4955000
+            },
+            "EST": {
+                "name": "Estonia",
+                "medianAge": 40.78,
+                "population": 1312000
+            },
+            "ETH": {
+                "name": "Ethiopia",
+                "medianAge": 18.2,
+                "population": 102403000
+            },
+            "FJI": {
+                "name": "Fiji",
+                "medianAge": 27.1,
+                "population": 899000
+            },
+            "FIN": {
+                "name": "Finland",
+                "medianAge": 42.3,
+                "population": 5503000
+            },
+            "FRA": {
+                "name": "France",
+                "medianAge": 40.6,
+                "population": 64721000
+            },
+            "GAB": {
+                "name": "Gabon",
+                "medianAge": 20.66,
+                "population": 1980000
+            },
+            "GMB": {
+                "name": "Gambia",
+                "medianAge": 16.95,
+                "population": 2039000
+            },
+            "GEO": {
+                "name": "Georgia",
+                "medianAge": 37.43,
+                "population": 3925000
+            },
+            "DEU": {
+                "name": "Germany",
+                "medianAge": 45.5,
+                "population": 81915000
+            },
+            "GHA": {
+                "name": "Ghana",
+                "medianAge": 20.6,
+                "population": 28207000
+            },
+            "GRC": {
+                "name": "Greece",
+                "medianAge": 42.8,
+                "population": 11184000
+            },
+            "GRD": {
+                "name": "Grenada",
+                "medianAge": 26.3,
+                "population": 107000
+            },
+            "GTM": {
+                "name": "Guatemala",
+                "medianAge": 19.4,
+                "population": 16582000
+            },
+            "GIN": {
+                "name": "Guinea",
+                "medianAge": 18.53,
+                "population": 12396000
+            },
+            "GNB": {
+                "name": "Guinea-Bissau",
+                "medianAge": 19.1,
+                "population": 1816000
+            },
+            "GUY": {
+                "name": "Guyana",
+                "medianAge": 22.6,
+                "population": 773000
+            },
+            "HTI": {
+                "name": "Haiti",
+                "medianAge": 22.2,
+                "population": 10847000
+            },
+            "HND": {
+                "name": "Honduras",
+                "medianAge": 21.57,
+                "population": 9113000
+            },
+            "HUN": {
+                "name": "Hungary",
+                "medianAge": 40.35,
+                "population": 9753000
+            },
+            "ISL": {
+                "name": "Iceland",
+                "medianAge": 35.5,
+                "population": 332000
+            },
+            "IND": {
+                "name": "India",
+                "medianAge": 26.4,
+                "population": 1324171000
+            },
+            "IDN": {
+                "name": "Indonesia",
+                "medianAge": 27.8,
+                "population": 261115000
+            },
+            "IRN": {
+                "name": "Iran (Islamic Republic of)",
+                "medianAge": 27.99,
+                "population": 80277000
+            },
+            "IRQ": {
+                "name": "Iraq",
+                "medianAge": 19.5,
+                "population": 37203000
+            },
+            "IRL": {
+                "name": "Ireland",
+                "medianAge": 35.3,
+                "population": 4726000
+            },
+            "ISR": {
+                "name": "Israel",
+                "medianAge": 30.1,
+                "population": 8192000
+            },
+            "ITA": {
+                "name": "Italy",
+                "medianAge": 44.3,
+                "population": 59430000
+            },
+            "JAM": {
+                "name": "Jamaica",
+                "medianAge": 27.7,
+                "population": 2881000
+            },
+            "JPN": {
+                "name": "Japan",
+                "medianAge": 45.9,
+                "population": 127749000
+            },
+            "JOR": {
+                "name": "Jordan",
+                "medianAge": 23.4,
+                "population": 9456000
+            },
+            "KAZ": {
+                "name": "Kazakhstan",
+                "medianAge": 29.4,
+                "population": 17988000
+            },
+            "KEN": {
+                "name": "Kenya",
+                "medianAge": 18.72,
+                "population": 48462000
+            },
+            "KIR": {
+                "name": "Kiribati",
+                "medianAge": 23.15,
+                "population": 114000
+            },
+            "KWT": {
+                "name": "Kuwait",
+                "medianAge": 29.2,
+                "population": 4053000
+            },
+            "KGZ": {
+                "name": "Kyrgyzstan",
+                "medianAge": 24.34,
+                "population": 5956000
+            },
+            "LAO": {
+                "name": "Lao People's Democratic Republic",
+                "medianAge": 21.4,
+                "population": 6758000
+            },
+            "LVA": {
+                "name": "Latvia",
+                "medianAge": 41.5,
+                "population": 1971000
+            },
+            "LBN": {
+                "name": "Lebanon",
+                "medianAge": 29.8,
+                "population": 6007000
+            },
+            "LSO": {
+                "name": "Lesotho",
+                "medianAge": 20.53,
+                "population": 2204000
+            },
+            "LBR": {
+                "name": "Liberia",
+                "medianAge": 18.43,
+                "population": 4614000
+            },
+            "LBY": {
+                "name": "Libya",
+                "medianAge": 26.6,
+                "population": 6293000
+            },
+            "LTU": {
+                "name": "Lithuania",
+                "medianAge": 39.09,
+                "population": 2908000
+            },
+            "LUX": {
+                "name": "Luxembourg",
+                "medianAge": 39,
+                "population": 576000
+            },
+            "MDG": {
+                "name": "Madagascar",
+                "medianAge": 18.4,
+                "population": 24895000
+            },
+            "MWI": {
+                "name": "Malawi",
+                "medianAge": 17.2,
+                "population": 18092000
+            },
+            "MYS": {
+                "name": "Malaysia",
+                "medianAge": 27.4,
+                "population": 31187000
+            },
+            "MDV": {
+                "name": "Maldives",
+                "medianAge": 25,
+                "population": 428000
+            },
+            "MLI": {
+                "name": "Mali",
+                "medianAge": 16.39,
+                "population": 17995000
+            },
+            "MLT": {
+                "name": "Malta",
+                "medianAge": 40.65,
+                "population": 429000
+            },
+            "MRT": {
+                "name": "Mauritania",
+                "medianAge": 19.8,
+                "population": 4301000
+            },
+            "MUS": {
+                "name": "Mauritius",
+                "medianAge": 34.18,
+                "population": 1262000
+            },
+            "MEX": {
+                "name": "Mexico",
+                "medianAge": 27,
+                "population": 127540000
+            },
+            "FSM": {
+                "name": "Micronesia (Federated States of)",
+                "medianAge": 21,
+                "population": 105000
+            },
+            "MNG": {
+                "name": "Mongolia",
+                "medianAge": 26.8,
+                "population": 3027000
+            },
+            "MAR": {
+                "name": "Morocco",
+                "medianAge": 26.7,
+                "population": 35277000
+            },
+            "MOZ": {
+                "name": "Mozambique",
+                "medianAge": 17.26,
+                "population": 28829000
+            },
+            "MMR": {
+                "name": "Myanmar",
+                "medianAge": 28.62,
+                "population": 52885000
+            },
+            "NAM": {
+                "name": "Namibia",
+                "medianAge": 21.2,
+                "population": 2480000
+            },
+            "NPL": {
+                "name": "Nepal",
+                "medianAge": 22.4,
+                "population": 28983000
+            },
+            "NLD": {
+                "name": "Netherlands",
+                "medianAge": 41.8,
+                "population": 16987000
+            },
+            "NZL": {
+                "name": "New Zealand",
+                "medianAge": 36.85,
+                "population": 4661000
+            },
+            "NIC": {
+                "name": "Nicaragua",
+                "medianAge": 23.1,
+                "population": 6150000
+            },
+            "NER": {
+                "name": "Niger",
+                "medianAge": 15.04,
+                "population": 20673000
+            },
+            "NGA": {
+                "name": "Nigeria",
+                "medianAge": 17.84,
+                "population": 185990000
+            },
+            "NOR": {
+                "name": "Norway",
+                "medianAge": 38.88,
+                "population": 5255000
+            },
+            "OMN": {
+                "name": "Oman",
+                "medianAge": 25.88,
+                "population": 4425000
+            },
+            "PAK": {
+                "name": "Pakistan",
+                "medianAge": 22.23,
+                "population": 193203000
+            },
+            "PAN": {
+                "name": "Panama",
+                "medianAge": 27.9,
+                "population": 4034000
+            },
+            "PNG": {
+                "name": "Papua New Guinea",
+                "medianAge": 20.9,
+                "population": 8085000
+            },
+            "PRY": {
+                "name": "Paraguay",
+                "medianAge": 23.9,
+                "population": 6725000
+            },
+            "PER": {
+                "name": "Peru",
+                "medianAge": 26.5,
+                "population": 31774000
+            },
+            "PHL": {
+                "name": "Philippines",
+                "medianAge": 22.74,
+                "population": 103320000
+            },
+            "POL": {
+                "name": "Poland",
+                "medianAge": 38.55,
+                "population": 38224000
+            },
+            "PRT": {
+                "name": "Portugal",
+                "medianAge": 42.2,
+                "population": 10372000
+            },
+            "QAT": {
+                "name": "Qatar",
+                "medianAge": 31.64,
+                "population": 2570000
+            },
+            "KOR": {
+                "name": "Republic of Korea",
+                "medianAge": 39.4,
+                "population": 50792000
+            },
+            "MDA": {
+                "name": "Republic of Moldova",
+                "medianAge": 35.8,
+                "population": 4060000
+            },
+            "ROU": {
+                "name": "Romania",
+                "medianAge": 39.4,
+                "population": 19778000
+            },
+            "RUS": {
+                "name": "Russian Federation",
+                "medianAge": 38.3,
+                "population": 143965000
+            },
+            "RWA": {
+                "name": "Rwanda",
+                "medianAge": 18.2,
+                "population": 11918000
+            },
+            "LCA": {
+                "name": "Saint Lucia",
+                "medianAge": 30.17,
+                "population": 178000
+            },
+            "VCT": {
+                "name": "Saint Vincent and the Grenadines",
+                "medianAge": 29,
+                "population": 110000
+            },
+            "WSM": {
+                "name": "Samoa",
+                "medianAge": 20.95,
+                "population": 195000
+            },
+            "STP": {
+                "name": "Sao Tome and Principe",
+                "medianAge": 19.2,
+                "population": 200000
+            },
+            "SAU": {
+                "name": "Saudi Arabia",
+                "medianAge": 27.5,
+                "population": 32276000
+            },
+            "SEN": {
+                "name": "Senegal",
+                "medianAge": 18.1,
+                "population": 15412000
+            },
+            "SRB": {
+                "name": "Serbia",
+                "medianAge": 38.7,
+                "population": 8820000
+            },
+            "SYC": {
+                "name": "Seychelles",
+                "medianAge": 32.26,
+                "population": 94000
+            },
+            "SLE": {
+                "name": "Sierra Leone",
+                "medianAge": 18.98,
+                "population": 7396000
+            },
+            "SGP": {
+                "name": "Singapore",
+                "medianAge": 37.88,
+                "population": 5622000
+            },
+            "SVK": {
+                "name": "Slovakia",
+                "medianAge": 37.87,
+                "population": 5444000
+            },
+            "SVN": {
+                "name": "Slovenia",
+                "medianAge": 42.1,
+                "population": 2078000
+            },
+            "SLB": {
+                "name": "Solomon Islands",
+                "medianAge": 19.7,
+                "population": 599000
+            },
+            "SOM": {
+                "name": "Somalia",
+                "medianAge": 16.3,
+                "population": 14318000
+            },
+            "ZAF": {
+                "name": "South Africa",
+                "medianAge": 26,
+                "population": 56015000
+            },
+            "ESP": {
+                "name": "Spain",
+                "medianAge": 40.99,
+                "population": 46348000
+            },
+            "LKA": {
+                "name": "Sri Lanka",
+                "medianAge": 31.4,
+                "population": 20798000
+            },
+            "SDN": {
+                "name": "Sudan",
+                "medianAge": 19.02,
+                "population": 39579000
+            },
+            "SUR": {
+                "name": "Suriname",
+                "medianAge": 28.18,
+                "population": 558000
+            },
+            "SWZ": {
+                "name": "Eswatini",
+                "medianAge": 20.1,
+                "population": 1343000
+            },
+            "SWE": {
+                "name": "Sweden",
+                "medianAge": 41,
+                "population": 9838000
+            },
+            "CHE": {
+                "name": "Switzerland",
+                "medianAge": 42,
+                "population": 8402000
+            },
+            "SYR": {
+                "name": "Syrian Arab Republic",
+                "medianAge": 22.4,
+                "population": 18430000
+            },
+            "TJK": {
+                "name": "Tajikistan",
+                "medianAge": 21.7,
+                "population": 8735000
+            },
+            "THA": {
+                "name": "Thailand",
+                "medianAge": 36.42,
+                "population": 68864000
+            },
+            "MKD": {
+                "name": "Republic of North Macedonia",
+                "medianAge": 37.1,
+                "population": 2081000
+            },
+            "TLS": {
+                "name": "Timor-Leste",
+                "medianAge": 16.4,
+                "population": 1269000
+            },
+            "TGO": {
+                "name": "Togo",
+                "medianAge": 18.9,
+                "population": 7606000
+            },
+            "TON": {
+                "name": "Tonga",
+                "medianAge": 21.3,
+                "population": 107000
+            },
+            "TTO": {
+                "name": "Trinidad and Tobago",
+                "medianAge": 33.3,
+                "population": 1365000
+            },
+            "TUN": {
+                "name": "Tunisia",
+                "medianAge": 30.3,
+                "population": 11403000
+            },
+            "TUR": {
+                "name": "Turkey",
+                "medianAge": 29.4,
+                "population": 79512000
+            },
+            "TKM": {
+                "name": "Turkmenistan",
+                "medianAge": 25.26,
+                "population": 5663000
+            },
+            "UGA": {
+                "name": "Uganda",
+                "medianAge": 15.68,
+                "population": 41488000
+            },
+            "UKR": {
+                "name": "Ukraine",
+                "medianAge": 39.7,
+                "population": 44439000
+            },
+            "ARE": {
+                "name": "United Arab Emirates",
+                "medianAge": 29.37,
+                "population": 9270000
+            },
+            "GBR": {
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "medianAge": 40.2,
+                "population": 65789000
+            },
+            "TZA": {
+                "name": "United Republic of Tanzania",
+                "medianAge": 17.5,
+                "population": 55572000
+            },
+            "USA": {
+                "name": "US",
+                "medianAge": 37.3,
+                "population": 322180000
+            },
+            "URY": {
+                "name": "Uruguay",
+                "medianAge": 34.4,
+                "population": 3444000
+            },
+            "UZB": {
+                "name": "Uzbekistan",
+                "medianAge": 24.88,
+                "population": 31447000
+            },
+            "VUT": {
+                "name": "Vanuatu",
+                "medianAge": 21.56,
+                "population": 270000
+            },
+            "VEN": {
+                "name": "Venezuela (Bolivarian Republic of)",
+                "medianAge": 27,
+                "population": 31568000
+            },
+            "VNM": {
+                "name": "Viet Nam",
+                "medianAge": 29.8,
+                "population": 94569000
+            },
+            "YEM": {
+                "name": "Yemen",
+                "medianAge": 19.1,
+                "population": 27584000
+            },
+            "ZMB": {
+                "name": "Zambia",
+                "medianAge": 16.6,
+                "population": 16591000
+            },
+            "ZWE": {
+                "name": "Zimbabwe",
+                "medianAge": 19.5,
+                "population": 16150000
+            },
+            "MNE": {
+                "name": "Montenegro",
+                "medianAge": 37.1,
+                "population": 629000
+            },
+            "SSD": {
+                "name": "South Sudan",
+                "medianAge": 18.6,
+                "population": 12231000
+            }
+        }
     </script>
 </head>
 
 <body>
-
+    <div id="scatterAge"></div>
     <div id="container"></div>
     <div id="percentage"></div>
     <div id="container2">
