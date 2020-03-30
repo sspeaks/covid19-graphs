@@ -27,15 +27,14 @@
                     for (let t = s+1; t < sc; t++) {
                     var s1 = newSeries[s],
                         s2 = newSeries[t],
-                        l = s1.length,
                         diff, h;
                         if (s1.dataLabel && s2.dataLabel) {
                             diff = s1.dataLabel.y - s2.dataLabel.y;
-                            h = s1.dataLabel.height + 2;
+                            h = s1.dataLabel.height / 2;
 
                             if (isLabelOnLabel(s1.dataLabel, s2.dataLabel)) {
-                                if (diff < 0) s1.dataLabel.translate(s1.dataLabel.translateX , s1.dataLabel.translateY) - (h + diff);
-                                else s2.dataLabel.translate(s2.dataLabel.translateX , s2.dataLabel.translateY) - (h - diff);
+                                if (diff < 0) s1.dataLabel.translate(s1.dataLabel.translateX , s1.dataLabel.translateY - (h + diff));
+                                else s2.dataLabel.translate(s2.dataLabel.translateX , s2.dataLabel.translateY - (h - diff));
                             }
                         }
                     }
@@ -91,7 +90,7 @@
                         text:  `Death Rate vs Median Age`
                     },
                     chart: {
-                        type: 'bubble',
+                        type: 'scatter',
                         zoomType: 'xy',
                          events: {
                             load: function () {
@@ -127,8 +126,8 @@
                         headerFormat: '<table>',
                         pointFormat: '<tr><th colspan="2"><h3>{point.name}</h3></th></tr>' +
                             '<tr><th>Median Age:</th><td>{point.x}</td></tr>' +
-                            '<tr><th>Deaths / Million:</th><td>{point.y:,.2f}</td></tr>' +
-                            '<tr><th>Confirmed / Million:</th><td>{point.z:,.2f}</td></tr>',
+                            '<tr><th>Deaths / M:</th><td>{point.y:,.2f}</td></tr>' +
+                            '<tr><th>Confirmed / M:</th><td>{point.z:,.2f}</td></tr>',
                         footerFormat: '</table>',
                         followPointer: true
                     },
@@ -136,7 +135,7 @@
                      plotOptions: {
                         series: {
                             dataLabels: {
-                                allowOverlap: false,
+                                allowOverlap: true,
                                 enabled: true,
                                 format: '{point.name}',
                                 // inside: false
