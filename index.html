@@ -7,10 +7,10 @@
         import 'https://code.highcharts.com/es-modules/masters/highcharts-more.src.js'
 
         Highcharts.setOptions({
-                lang: {
-                    thousandsSep: ','
-                }
-            });
+            lang: {
+                thousandsSep: ','
+            }
+        });
 
         const recoveredColor = '#198c19';
         const confirmedColor = '#308fa4';
@@ -21,20 +21,20 @@
             function StaggerDataLabels(series) {
                 let newSeries = series[0].data;
                 let sc = newSeries.length;
-                if(sc < 2) return;
+                if (sc < 2) return;
 
                 for (let s = 1; s < sc - 1; s++) {
-                    for (let t = s+1; t < sc; t++) {
-                    var s1 = newSeries[s],
-                        s2 = newSeries[t],
-                        diff, h;
+                    for (let t = s + 1; t < sc; t++) {
+                        var s1 = newSeries[s],
+                            s2 = newSeries[t],
+                            diff, h;
                         if (s1.dataLabel && s2.dataLabel) {
                             diff = s1.dataLabel.y - s2.dataLabel.y;
                             h = s1.dataLabel.height / 2;
 
                             if (isLabelOnLabel(s1.dataLabel, s2.dataLabel)) {
-                                if (diff < 0) s1.dataLabel.translate(s1.dataLabel.translateX , s1.dataLabel.translateY - (h + diff));
-                                else s2.dataLabel.translate(s2.dataLabel.translateX , s2.dataLabel.translateY - (h - diff));
+                                if (diff < 0) s1.dataLabel.translate(s1.dataLabel.translateX, s1.dataLabel.translateY - (h + diff));
+                                else s2.dataLabel.translate(s2.dataLabel.translateX, s2.dataLabel.translateY - (h - diff));
                             }
                         }
                     }
@@ -87,12 +87,12 @@
             Highcharts.chart('scatterAge',
                 {
                     title: {
-                        text:  `Death Rate vs Median Age`
+                        text: `Death Rate vs Median Age`
                     },
                     chart: {
                         type: 'scatter',
                         zoomType: 'xy',
-                         events: {
+                        events: {
                             load: function () {
                                 StaggerDataLabels(this.series);
                             },
@@ -132,7 +132,7 @@
                         followPointer: true
                     },
 
-                     plotOptions: {
+                    plotOptions: {
                         series: {
                             dataLabels: {
                                 allowOverlap: true,
@@ -155,6 +155,97 @@
                             }
                         })
                     }]
+                })
+        };
+        const onDataLogChart = (data) => {
+            let aggData = Object.entries(data);
+            aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
+            // aggData = aggData.slice(0, 20);
+            console.log(aggData);
+            Highcharts.chart('logChart',
+                {
+                    title: {
+                        text: `Average New Cases vs Confirmed Cases`
+                    },
+                    subtitle: {
+                        text: 'courtesy of https://youtu.be/54XLXg4fYsc'
+                    },
+                    chart: {
+                        zoomType: 'xy'
+                    },
+
+                    yAxis: {
+
+                        type: 'logarithmic',
+                        title: {
+                            text: 'New Cases (Weekly average)'
+                        }
+                    },
+
+                    tooltip: {
+                        split: true
+                    },
+                    plotOptions: {
+                        series: {
+                            dataLabels: {
+                                allowOverlap: true,
+                                enabled: true,
+                                format: '{point.name}',
+                                // inside: false
+                            },
+                            lineWidth: 5
+                        },
+                        line: {
+                            marker: {
+                                enabled: false
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        useHTML: true,
+                        headerFormat: '<table>',
+                        pointFormat: '<tr><th colspan="2"><h3>{series.name}</h3></th></tr>' +
+                            '<tr><th>Confirmed:</th><td>{point.x:,.2f}</td></tr>' +
+                            '<tr><th>New Cases:</th><td>{point.y:,.2f}</td></tr>',
+                        footerFormat: '</table>',
+                        followPointer: true
+                    },
+
+                    xAxis: {
+                        min: 100,
+                        gridLineWidth: 1,
+                        type: 'logarithmic',
+                        title: {
+                            text: 'Total Confirmed Cases'
+                        },
+                    },
+
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle'
+                    },
+
+                    series: aggData.map(([key, value]) => ({
+                        name: key,
+                        data: value.reduce((ls, x, ind) => {
+                            let fst = x.confirmed;
+                            let snd = 0;
+                            for (let i = ind; i > ind - 7; i--) {
+                                if (i >= 1) {
+                                    snd += value[i].confirmed - value[i - 1].confirmed;
+                                } else {
+                                    snd += 0;
+                                }
+                            }
+                            snd = snd / 7;
+                            if (fst > 0 && snd > 0) {
+                                ls.push([fst, snd]);
+                            }
+                            return ls;
+                        }, [])
+                    })),
                 })
         };
 
@@ -588,6 +679,7 @@
                 Object.keys(dat).sort().forEach(key => select.append(new Option(key, key)));
                 onDataLineChart(dat, "US");
                 onDataPercentageChart(dat, "US");
+                onDataLogChart(dat);
                 onDataAggregateChart(dat);
                 // onDataAggregateActiveChart(dat);
                 onDataAggregateDeathsChart(dat);
@@ -1524,6 +1616,7 @@
 </head>
 
 <body>
+    <div id="logChart"></div>
     <div id="scatterAge"></div>
     <div id="container"></div>
     <div id="percentage"></div>
