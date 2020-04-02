@@ -548,6 +548,7 @@
                     }
                 })
         };
+
         const onDataPercentageChart = (data, key) => {
             data = data[key];
             getPopulation(key).then(pop => {
@@ -630,13 +631,13 @@
                             var split = item.date.split('-');
                             return [Date.UTC(split[0], split[1] - 1, split[2]), item.confirmed - item.recovered - item.deaths]
                         })
-                        // }, {
-                        //     name: 'Recovered',
-                        //     color: recoveredColor,
-                        //     data: data.map(item => {
-                        //         var split = item.date.split('-');
-                        //         return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
-                        //     })
+                    }, {
+                        name: 'Recovered',
+                        color: recoveredColor,
+                        data: data.map(item => {
+                            var split = item.date.split('-');
+                            return [Date.UTC(split[0], split[1] - 1, split[2]), item.recovered]
+                        })
                     }, {
                         color: deathsColor,
                         name: 'Deaths',
@@ -663,6 +664,7 @@
                     }
                 });
         }
+
         const getPopulation = (key) =>
             getCountryCode(key).then(code =>
                 fetch(`https://restcountries.eu/rest/v2/alpha/${code}?fields=population`)
@@ -672,7 +674,7 @@
             fetch("https://sspeaks.github.io/covid19/countries.json")
                 .then(response => response.json())
                 .then(dat => dat[key].code);
-        fetch("https://sspeaks.github.io/covid19/timeseries.json")
+        fetch("https://pomber.github.io/covid19/timeseries.json")
             .then(response => response.json())
             .then(dat => {
                 const select = document.querySelector('#container2 select');
