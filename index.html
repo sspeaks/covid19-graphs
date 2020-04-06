@@ -80,6 +80,13 @@
             let aggData = Object.entries(data);
             aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].deaths - a[a.length - 1].deaths);
             aggData = aggData.slice(0, 20);
+            aggData.push(["Mexico", data["Mexico"]]);
+            aggData.push(["Japan", data["Japan"]]);
+            aggData.push(["Sweden", data["Sweden"]]);
+            aggData.push(["Iran", data["Iran"]]);
+            aggData.push(["China", data["China"]]);
+            aggData.push(["Indonesia", data["Indonesia"]]);
+            aggData.push(["Taiwan", data["Taiwan*"]]);
             data = aggData.reduce((agg, ind) => {
                 agg[ind[0]] = ind[1];
                 return agg
@@ -160,8 +167,7 @@
         const onDataLogChart = (data) => {
             let aggData = Object.entries(data);
             aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
-            // aggData = aggData.slice(0, 20);
-            console.log(aggData);
+            aggData = aggData.slice(0, 20);
             Highcharts.chart('logChart',
                 {
                     title: {
@@ -873,6 +879,11 @@
                 "medianAge": 37.4,
                 "population": 1411415000
             },
+            "TWN" : {
+                "name": "Taiwan",
+                "medianAge": 42.5,
+                "population": 23780000
+            },
             "COL": {
                 "name": "Colombia",
                 "medianAge": 27.7,
@@ -1079,7 +1090,7 @@
                 "population": 261115000
             },
             "IRN": {
-                "name": "Iran (Islamic Republic of)",
+                "name": "Iran",
                 "medianAge": 27.99,
                 "population": 80277000
             },
