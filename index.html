@@ -167,14 +167,15 @@
                     }]
                 })
         };
-        const onDataLogChart = (data) => {
+        const onDataLogChart = (data, selector, title = "National Average New Cases vs Confirmed Cases", numValues = 20) => {
             let aggData = Object.entries(data);
             aggData.sort(([k1, a], [k2, b]) => b[b.length - 1].confirmed - a[a.length - 1].confirmed);
-            aggData = aggData.slice(0, 20);
-            Highcharts.chart('logChart',
+            aggData = aggData.slice(0, numValues);
+
+            const logChart = Highcharts.chart(selector,
                 {
                     title: {
-                        text: `Average New Cases vs Confirmed Cases`
+                        text: title
                     },
                     subtitle: {
                         text: 'courtesy of https://youtu.be/54XLXg4fYsc'
@@ -255,7 +256,7 @@
                             return ls;
                         }, [])
                     })),
-                })
+                });
         };
 
         const onDataLineChart = (data, key) => {
@@ -683,6 +684,11 @@
             fetch("https://sspeaks.github.io/covid19/countries.json")
                 .then(response => response.json())
                 .then(dat => dat[key].code);
+        fetch('https://sspeaks.github.io/covid19/timeseries_states.json')
+            .then(response => response.json())
+            .then(dat => {
+                onDataLogChart(dat, 'logChartStates', 'States Average New Cases vs Confirmed Cases', 20);
+            });
         fetch("https://pomber.github.io/covid19/timeseries.json")
             .then(response => response.json())
             .then(dat => {
@@ -690,7 +696,7 @@
                 Object.keys(dat).sort().forEach(key => select.append(new Option(key, key)));
                 onDataLineChart(dat, "US");
                 onDataPercentageChart(dat, "US");
-                onDataLogChart(dat);
+                onDataLogChart(dat, "logChart");
                 onDataAggregateChart(dat);
                 // onDataAggregateActiveChart(dat);
                 onDataAggregateDeathsChart(dat);
@@ -882,7 +888,7 @@
                 "medianAge": 37.4,
                 "population": 1411415000
             },
-            "TWN" : {
+            "TWN": {
                 "name": "Taiwan",
                 "medianAge": 42.5,
                 "population": 23780000
@@ -1633,6 +1639,7 @@
 
 <body>
     <div id="logChart"></div>
+    <div id="logChartStates"></div>
     <div id="scatterAge"></div>
     <div id="container"></div>
     <div id="percentage"></div>
