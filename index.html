@@ -30,7 +30,7 @@
                             diff, h;
                         if (s1.dataLabel && s2.dataLabel) {
                             diff = s1.dataLabel.y - s2.dataLabel.y;
-                            h = s1.dataLabel.height / 2;
+                            h = s1.dataLabel.height / 2 + 10;
 
                             if (isLabelOnLabel(s1.dataLabel, s2.dataLabel)) {
                                 if (diff < 0) s1.dataLabel.translate(s1.dataLabel.translateX, s1.dataLabel.translateY - (h + diff));
@@ -87,6 +87,8 @@
             aggData.push(["China", data["China"]]);
             aggData.push(["Indonesia", data["Indonesia"]]);
             aggData.push(["Taiwan", data["Taiwan*"]]);
+            aggData.push(["South Korea", data["Korea, South"]]);
+            aggData.push(["United Kingdom", data["United Kingdom"]]);
             data = aggData.reduce((agg, ind) => {
                 agg[ind[0]] = ind[1];
                 return agg
@@ -151,6 +153,7 @@
                     },
 
                     series: [{
+                        color: "blue",
                         data: Object.entries(medianAges).filter(([key, value]) => data[value.name]).map(([key, value], index) => {
                             return {
                                 x: value.medianAge,
@@ -1355,7 +1358,7 @@
                 "population": 2570000
             },
             "KOR": {
-                "name": "Republic of Korea",
+                "name": "South Korea",
                 "medianAge": 39.4,
                 "population": 50792000
             },
@@ -1560,7 +1563,7 @@
                 "population": 9270000
             },
             "GBR": {
-                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "name": "United Kingdom",
                 "medianAge": 40.2,
                 "population": 65789000
             },
